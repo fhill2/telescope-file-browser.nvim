@@ -131,6 +131,7 @@ fb_finders.finder = function(opts)
   return setmetatable({
     cwd_to_path = opts.cwd_to_path,
     cwd = opts.cwd_to_path and opts.path or opts.cwd, -- nvim cwd
+    initial_path = opts.path,
     path = vim.F.if_nil(opts.path, opts.cwd), -- current path for file browser
     add_dirs = vim.F.if_nil(opts.add_dirs, true),
     hidden = vim.F.if_nil(opts.hidden, false),

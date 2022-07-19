@@ -96,6 +96,7 @@ end
 ---   - You can create folders by ending the name in the path separator of your OS, e.g. "/" on Unix systems
 ---   - You can implicitly create new folders by passing $/CWD/new_folder/filename.lua
 ---@param prompt_bufnr number: The prompt bufnr
+
 fb_actions.create = function(prompt_bufnr)
   local current_picker = action_state.get_current_picker(prompt_bufnr)
   local finder = current_picker.finder
@@ -108,8 +109,19 @@ fb_actions.create = function(prompt_bufnr)
       -- values from finder for values don't have trailing os sep for folders
       local path = file:absolute()
       path = file:is_dir() and path:sub(1, -2) or path
-      fb_utils.selection_callback(current_picker, path)
+      -- fb_utils.selection_callback(current_picker, path)
       current_picker:refresh(finder, { reset_prompt = true, multi = current_picker._multi })
+
+--https://github.com/nvim-telescope/telescope-file-browser.nvim/issues/104#issuecomment-1049647208
+-- focus the newly created file/folder
+        current_picker:register_completion_callback(function()
+        vim.defer_fn(function() 
+        fb_utils.selection_callback(current_picker, path)
+        current_picker:_on_complete()
+        current_picker:clear_completion_callbacks()
+        end, 10)
+      end)
+
     end
   end)
 end
@@ -547,7 +559,8 @@ end
 fb_actions.goto_cwd = function(prompt_bufnr)
   local current_picker = action_state.get_current_picker(prompt_bufnr)
   local finder = current_picker.finder
-  finder.path = vim.loop.cwd()
+
+  finder.path = finder.cwd_to_path and finder.initial_path or vim.loop.cwd()
 
   fb_utils.redraw_border_title(current_picker)
   current_picker:refresh(finder, { reset_prompt = true, multi = current_picker._multi })
@@ -674,19 +687,30 @@ end
 
 --- Toggle sorting by last change to the entry.<br>
 --- Note: initially sorts desendingly from most to least recently changed entry.
-fb_actions.sort_by_date = function(prompt_bufnr)
+fb_actions.sort_by_date = function(prompt_bufnr, once)
   local finder = action_state.get_current_picker(prompt_bufnr).finder
-  finder.__sort_date = not finder.__sort_date
+
+  if not once then
+    finder.__sort_date = not finder.__sort_date
+  end
+
   sort_by(prompt_bufnr, function(x, y)
     if x.stat.mtime.sec > y.stat.mtime.sec then
-      return finder.__sort_date
-    elseif x.stat.mtime.sec < y.stat.mtime.sec then
       return not finder.__sort_date
+    elseif x.stat.mtime.sec < y.stat.mtime.sec then
+      return finder.__sort_date
       -- required separately
     else
       return false
     end
   end)
+end
+
+fb_actions.sort_by_date_once = function(prompt_bufnr)
+  -- local current_picker = action_state.get_current_picker(prompt_bufnr)
+  -- local finder = action_state.get_current_picker(prompt_bufnr).finder
+  -- return finder.__sort_date and current_picker:reset_selection() or fb_actions.sort_by_date(prompt_bufnr, true)
+  fb_actions.sort_by_date(prompt_bufnr, true)
 end
 
 fb_actions = transform_mod(fb_actions)

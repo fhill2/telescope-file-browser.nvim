@@ -18,6 +18,7 @@ local conf = require("telescope.config").values
 
 local fb_finder = require "telescope._extensions.file_browser.finders"
 local fb_utils = require "telescope._extensions.file_browser.utils"
+local fb_actions = require "telescope._extensions.file_browser.actions"
 
 local Path = require "plenary.path"
 local os_sep = Path.path.sep
@@ -86,6 +87,7 @@ fb_picker.file_browser = function(opts)
   opts.display_stat = vim.F.if_nil(opts.display_stat, { date = true, size = true })
   opts.custom_prompt_title = opts.prompt_title ~= nil
   opts.custom_results_title = opts.results_title ~= nil
+  opts.initial_sort = vim.F.if_nil(opts.initial_sort, false)
 
   local select_buffer = opts.select_buffer and opts.files
   -- handle case that current buffer is a hidden file
@@ -106,6 +108,16 @@ fb_picker.file_browser = function(opts)
     -- end)
   end
 
+  if opts.initial_sort then
+    opts._completion_callbacks = vim.F.if_nil(opts._completion_callbacks, {})
+    table.insert(opts._completion_callbacks, function(current_picker)
+      fb_actions.sort_by_date_once(current_picker.prompt_bufnr) 
+      table.remove(current_picker._completion_callbacks)
+  end)
+
+  end
+
+
   pickers
     .new(opts, {
       prompt_title = opts.files and "File Browser" or "Folder Browser",
@@ -114,6 +126,7 @@ fb_picker.file_browser = function(opts)
       sorter = conf.file_sorter(opts),
     })
     :find()
+
 end
 
 return fb_picker.file_browser
