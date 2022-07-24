@@ -58,6 +58,8 @@ local fb_config = require "telescope._extensions.file_browser.config"
 
 local file_browser = function(opts)
   opts = opts or {}
+  opts.initial_opts = vim.deepcopy(opts)
+
   local defaults = (function()
     if fb_config.values.theme then
       return require("telescope.themes")["get_" .. fb_config.values.theme](fb_config.values)

@@ -6,6 +6,7 @@ local utils = require "telescope.utils"
 local Path = require "plenary.path"
 local os_sep = Path.path.sep
 local truncate = require("plenary.strings").truncate
+local from_entry = require "telescope.from_entry"
 
 local fb_utils = {}
 
@@ -15,6 +16,17 @@ fb_utils.is_dir = function(path)
   end
   return string.sub(path, -1, -1) == os_sep
 end
+
+-- so live_grep works with fb actions that rely on get_selected_files()
+local get_path = function(entry)
+  if entry.filename and entry.filename:match(":") then
+    local filename = vim.split(entry.filename, ":")[1]
+    return Path:new({ entry._cwd, filename })
+  else
+    return Path:new(entry)
+  end
+end
+
 
 -- TODO(fdschmidt93): support multi-selections better usptream
 fb_utils.get_selected_files = function(prompt_bufnr, smart)
@@ -26,11 +38,11 @@ fb_utils.get_selected_files = function(prompt_bufnr, smart)
     table.insert(selected, action_state.get_selected_entry())
   else
     for _, selection in ipairs(selections) do
-      table.insert(selected, Path:new(selection[1]))
+      table.insert(selected, get_path(selection[1]))
     end
   end
   selected = vim.tbl_map(function(entry)
-    return Path:new(entry)
+    return get_path(entry)
   end, selected)
   return selected
 end
@@ -105,6 +117,14 @@ fb_utils.delete_dir_buf = function(dir)
   }
 end
 
+fb_utils.depth_to_string = function(depth)
+  if depth == 1 then
+    depth_display = "d=1"
+  else
+    depth_display = "recurse"
+  end
+  return depth_display
+end
 -- redraws prompt and results border contingent on picker status
 fb_utils.redraw_border_title = function(current_picker)
   local finder = current_picker.finder
@@ -115,8 +135,8 @@ fb_utils.redraw_border_title = function(current_picker)
   if current_picker.results_border and not finder.results_title then
     local new_title
     if finder.files or finder.cwd_to_path then
-      -- new_title = Path:new(finder.path):make_relative(vim.loop.cwd())
-      new_title = Path:new(finder.path):make_relative(vim.loop.os_homedir())
+      new_title = fb_utils.depth_to_string(finder.depth) .. " - "
+      new_title = new_title .. Path:new(finder.path):make_relative(vim.loop.os_homedir())
     else
       new_title = finder.cwd
     end

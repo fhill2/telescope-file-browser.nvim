@@ -118,15 +118,17 @@ fb_picker.file_browser = function(opts)
   end
 
 
-  pickers
+  local depth_display = fb_utils.depth_to_string(opts.depth)
+
+  local picker = pickers
     .new(opts, {
       prompt_title = opts.files and "File Browser" or "Folder Browser",
-      results_title = opts.files and Path:new(opts.path):make_relative(cwd) .. os_sep or "Results",
+      results_title = opts.files and depth_display .. " - " .. Path:new(opts.path):make_relative(cwd) .. os_sep or "Results",
       previewer = conf.file_previewer(opts),
       sorter = conf.file_sorter(opts),
     })
-    :find()
-
+    picker:find()
+  picker.initial_opts = opts.initial_opts
 end
 
 return fb_picker.file_browser
