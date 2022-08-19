@@ -52,7 +52,7 @@ _TelescopeFileBrowserConfig = {
       local current_picker = action_state.get_current_picker(prompt_bufnr)
       local finder = current_picker.finder
       local entry = action_state.get_selected_entry()
-      local path = vim.loop.fs_realpath(entry.path)
+      local path = entry.path
 
       if finder.files and finder.collapse_dirs then
         local upwards = path == Path:new(finder.path):parent():absolute()
