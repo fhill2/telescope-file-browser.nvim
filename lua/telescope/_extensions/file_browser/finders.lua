@@ -47,6 +47,7 @@ fb_finders.browse_files = function(opts)
       table.insert(args, "--maxdepth")
       table.insert(args, opts.depth)
     end
+    table.insert(args, "-L")
     return async_oneshot_finder {
       fn_command = function()
         return { command = "fd", args = args }
