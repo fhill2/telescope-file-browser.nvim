@@ -574,7 +574,12 @@ fb_actions.change_cwd = function(prompt_bufnr)
   local entry_path = action_state.get_selected_entry().Path
   finder.path = entry_path:is_dir() and entry_path:absolute() or entry_path:parent():absolute()
   finder.cwd = finder.path
-  vim.cmd("cd " .. finder.path)
+  vim.api.nvim_set_current_dir(finder.path)
+
+  -- reverse resolve to repo-tags for original directories containing repos
+  _G.telescope_fb_repo_resolver(function()
+    _G.fb_current_dir = finder.path 
+  end)
 
   fb_utils.redraw_border_title(current_picker)
   current_picker:refresh(finder, { reset_prompt = true, multi = current_picker._multi })
